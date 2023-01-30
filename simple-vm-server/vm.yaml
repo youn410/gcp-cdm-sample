@@ -1,0 +1,59 @@
+resources:
+  - type: compute.v1.network
+    name: my-vpc
+    properties:
+      autoCreateSubnetworks: false
+  - type: compute.v1.subnetwork
+    name: my-subnet
+    properties:
+      network: $(ref.my-vpc.selfLink)
+      ipCidrRange: 10.0.0.0/24
+      region: us-central1
+  - type: compute.v1.firewall
+    name: myvpc-allow-icmp
+    properties:
+      network: $(ref.my-vpc.selfLink)
+      priority: 65534
+      sourceRanges: [ 0.0.0.0/0 ]
+      allowed:
+      - IPProtocol: icmp
+  - type: compute.v1.firewall
+    name: myvpc-allow-ssh
+    properties:
+      network: $(ref.my-vpc.selfLink)
+      priority: 65534
+      sourceRanges: [ 0.0.0.0/0 ]
+      allowed:
+      - IPProtocol: tcp
+        ports:
+        - 22
+  - type: compute.v1.firewall
+    name: myvpc-allow-http
+    properties:
+      network: $(ref.my-vpc.selfLink)
+      priority: 65534
+      sourceRanges: [ 0.0.0.0/0 ]
+      allowed:
+      - IPProtocol: tcp
+        ports:
+        - 80
+  - type: compute.v1.instance
+    name: my-instance
+    properties:
+      machineType: projects/simple-vm-server-cdm/zones/us-central1-a/machineTypes/g1-small
+      networkInterfaces:
+      - network: $(ref.my-vpc.selfLink)
+        subnetwork: $(ref.my-subnet.selfLink)
+        networkIP: 10.0.0.4
+        accessConfigs:
+        - name: External NAT
+          type: ONE_TO_ONE_NAT
+      disks:
+      - deviceName: boot
+        boot: true
+        initializeParams:
+          sourceImage: https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-stream-9-v20221102
+          diskSizeGb: 20
+        autoDelete: true
+        diskSizeGb: 20
+      zone: us-central1-a
